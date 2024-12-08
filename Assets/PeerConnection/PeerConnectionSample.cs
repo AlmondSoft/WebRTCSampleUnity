@@ -1,8 +1,10 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Unity.Collections;
 using Unity.WebRTC;
 using Unity.WebRTC.Samples;
+using UnityEditor.PackageManager;
 using UnityEngine;
 using UnityEngine.UI;
 using Button = UnityEngine.UI.Button;
@@ -19,17 +21,12 @@ class PeerConnectionSample : MonoBehaviour
         UDP,
         TCP
     }
-
-    public RTCPeerConnection serverPeerConnection;
-    public List<RTCRtpSender> serverPeerSenders;
-    public MediaStream sendStream;
-
-    public DelegateOnIceConnectionChange serverOnIceConnectionChange;
-    public DelegateOnIceCandidate serverOnIceCandidate;
+    
+    
     public DelegateOnNegotiationNeeded serverOnNegotiationNeeded;
 
     //
-    private RTCPeerConnection _pc2;
+    public RTCPeerConnection _pc2;
     private MediaStream receiveStream;
 
     private DelegateOnIceConnectionChange pc2OnIceConnectionChange;
@@ -48,10 +45,7 @@ class PeerConnectionSample : MonoBehaviour
 
     private void Start()
     {
-        serverPeerSenders = new List<RTCRtpSender>();
-        serverOnIceConnectionChange = state => { OnIceConnectionChange(serverPeerConnection, state); };
-        serverOnIceCandidate = candidate => { OnIceCandidate(serverPeerConnection, candidate); };
-        serverOnNegotiationNeeded = () => { StartCoroutine(PeerNegotiationNeeded(serverPeerConnection)); };
+        serverOnNegotiationNeeded = () => { StartCoroutine(PeerNegotiationNeeded( WRTCServerPeer.Instance.serverPeerConnection)); };
 
 
         pc2OnIceConnectionChange = state => { OnIceConnectionChange(_pc2, state); };
@@ -163,29 +157,12 @@ class PeerConnectionSample : MonoBehaviour
         }
         else
         {
-            OnCreateSessionDescriptionError(op.Error);
+            Debug.LogError($"Error Detail Type: {op.Error.message}");
         }
     }
 
     public void AddTracks()
     {
-        foreach (var track in sendStream.GetTracks())
-        {
-            serverPeerSenders.Add(serverPeerConnection.AddTrack(track, sendStream));
-        }
-
-        if (WebRTCSettings.UseVideoCodec != null)
-        {
-            var codecs = new[] { WebRTCSettings.UseVideoCodec };
-            foreach (var transceiver in serverPeerConnection.GetTransceivers())
-            {
-                if (serverPeerSenders.Contains(transceiver.Sender))
-                {
-                    transceiver.SetCodecPreferences(codecs);
-                }
-            }
-        }
-
         if (!videoUpdateStarted)
         {
             StartCoroutine(WebRTC.Update());
@@ -195,13 +172,6 @@ class PeerConnectionSample : MonoBehaviour
 
     public void RemoveTracks()
     {
-        foreach (var sender in serverPeerSenders)
-        {
-            serverPeerConnection.RemoveTrack(sender);
-        }
-
-        serverPeerSenders.Clear();
-
         var tracks = receiveStream.GetTracks().ToArray();
         foreach (var track in tracks)
         {
@@ -236,16 +206,17 @@ class PeerConnectionSample : MonoBehaviour
 
     private string GetName(RTCPeerConnection pc)
     {
-        return (pc == serverPeerConnection) ? "pc1" : "pc2";
+        return (pc == WRTCServerPeer.Instance.serverPeerConnection) ? "pc1" : "pc2";
     }
 
     private RTCPeerConnection GetOtherPc(RTCPeerConnection pc)
     {
-        return (pc == serverPeerConnection) ? _pc2 : serverPeerConnection;
+        return (pc == WRTCServerPeer.Instance.serverPeerConnection) ? _pc2 : WRTCServerPeer.Instance.serverPeerConnection;
     }
 
     private IEnumerator OnCreateOfferSuccess(RTCPeerConnection pc, RTCSessionDescription desc)
     {
+
         Debug.Log($"Offer from {GetName(pc)}\n{desc.sdp}");
         Debug.Log($"{GetName(pc)} setLocalDescription start");
         var op = pc.SetLocalDescription(ref desc);
@@ -253,12 +224,12 @@ class PeerConnectionSample : MonoBehaviour
 
         if (!op.IsError)
         {
-            OnSetLocalSuccess(pc);
+            Debug.Log($"{GetName(pc)} SetLocalDescription complete");
         }
         else
         {
             var error = op.Error;
-            OnSetSessionDescriptionError(ref error);
+            Debug.LogError($"Error Detail Type: {error.message}");
             yield break;
         }
 
@@ -268,12 +239,12 @@ class PeerConnectionSample : MonoBehaviour
         yield return op2;
         if (!op2.IsError)
         {
-            OnSetRemoteSuccess(otherPc);
+            Debug.Log($"{GetName(otherPc)} SetRemoteDescription complete");
         }
         else
         {
             var error = op2.Error;
-            OnSetSessionDescriptionError(ref error);
+            Debug.LogError($"Error Detail Type: {error.message}");
             yield break;
         }
 
@@ -290,29 +261,14 @@ class PeerConnectionSample : MonoBehaviour
         }
         else
         {
-            OnCreateSessionDescriptionError(op3.Error);
+            Debug.LogError($"Error Detail Type: {op3.Error.message}");
         }
     }
 
-    private void OnSetLocalSuccess(RTCPeerConnection pc)
-    {
-        Debug.Log($"{GetName(pc)} SetLocalDescription complete");
-    }
-
-    void OnSetSessionDescriptionError(ref RTCError error)
-    {
-        Debug.LogError($"Error Detail Type: {error.message}");
-
-        OnHangUp();
-    }
-
-    private void OnSetRemoteSuccess(RTCPeerConnection pc)
-    {
-        Debug.Log($"{GetName(pc)} SetRemoteDescription complete");
-    }
 
     IEnumerator OnCreateAnswerSuccess(RTCPeerConnection pc, RTCSessionDescription desc)
     {
+        
         Debug.Log($"Answer from {GetName(pc)}:\n{desc.sdp}");
         Debug.Log($"{GetName(pc)} setLocalDescription start");
         var op = pc.SetLocalDescription(ref desc);
@@ -320,12 +276,12 @@ class PeerConnectionSample : MonoBehaviour
 
         if (!op.IsError)
         {
-            OnSetLocalSuccess(pc);
+            Debug.Log($"{GetName(pc)} SetLocalDescription complete");
         }
         else
         {
             var error = op.Error;
-            OnSetSessionDescriptionError(ref error);
+            Debug.LogError($"Error Detail Type: {error.message}");
         }
 
         var otherPc = GetOtherPc(pc);
@@ -335,18 +291,14 @@ class PeerConnectionSample : MonoBehaviour
         yield return op2;
         if (!op2.IsError)
         {
-            OnSetRemoteSuccess(otherPc);
+            Debug.Log($"{GetName(otherPc)} SetRemoteDescription complete");
         }
         else
         {
             var error = op2.Error;
-            OnSetSessionDescriptionError(ref error);
+            Debug.LogError($"Error Detail Type: {error.message}");
         }
-    }
-
-    private static void OnCreateSessionDescriptionError(RTCError error)
-    {
-        Debug.LogError($"Error Detail Type: {error.message}");
+        
     }
 
     //
