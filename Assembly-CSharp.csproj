@@ -61,8 +61,8 @@
     <Analyzer Include="C:\Program Files\Unity\Hub\Editor\6000.0.28f1\Editor\Data\Tools\Unity.SourceGenerators\Unity.UIToolkit.SourceGenerator.dll" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Assets\PeerConnection\PeerConnectionSample.cs" />
     <Compile Include="Assets\PeerConnection\WRTCServerPeer.cs" />
+    <Compile Include="Assets\PeerConnection\WRTCClientPeer.cs" />
     <Compile Include="Assets\TutorialInfo\Scripts\Readme.cs" />
     <Compile Include="Assets\PeerConnection\TestUI.cs" />
   </ItemGroup>

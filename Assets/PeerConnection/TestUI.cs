@@ -59,7 +59,7 @@ public class TestUI : MonoBehaviour
 
 
         //
-        PeerConnectionSample.Instance.OnStart(cam);
+        WRTCClientPeer.Instance.OnStart(cam);
         WRTCServerPeer.Instance.OnStart(cam);
 
         // 반드시 여기서 
@@ -74,7 +74,7 @@ public class TestUI : MonoBehaviour
         hangUpButton.interactable = true;
         restartButton.interactable = true;
 
-        PeerConnectionSample.Instance.OnCall();
+        WRTCClientPeer.Instance.OnCall();
         WRTCServerPeer.Instance.OnCall();
     }
 
@@ -82,7 +82,7 @@ public class TestUI : MonoBehaviour
     {
         restartButton.interactable = false;
 
-        PeerConnectionSample.Instance.OnRestartIce();
+        WRTCClientPeer.Instance.OnRestartIce();
         WRTCServerPeer.Instance.OnRestartIce();
     }
 
@@ -94,7 +94,7 @@ public class TestUI : MonoBehaviour
         hangUpButton.interactable = false;
         receiveImage.color = Color.black;
 
-        PeerConnectionSample.Instance.OnHangUp();
+        WRTCClientPeer.Instance.OnHangUp();
         WRTCServerPeer.Instance.OnHangUp();
     }
 
