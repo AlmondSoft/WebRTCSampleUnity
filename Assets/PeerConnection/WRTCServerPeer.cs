@@ -51,12 +51,6 @@ public class WRTCServerPeer : MonoBehaviour
 
     }
 
-    RTCPeerConnection GetOtherClient()
-    {
-        return WRTCClientPeer.Instance.clientPeerConnection;
-    }
-
-
     #region PeerNegotiationNeeded
     public IEnumerator PeerNegotiationNeeded(RTCPeerConnection pc)
     {
@@ -107,67 +101,25 @@ public class WRTCServerPeer : MonoBehaviour
         // 다른 클라이언트 connection 정보 알아와야 한다.  이것을 webRTC에서는 signaling 라고 한다함.
         //
         // signaling을 webRTC에서는  공식 지원하지 않는다.
-        var clientPeer = GetOtherClient();
 
-        Debug.Log($"Client>>  setRemoteDescription start");
-        var op2 = clientPeer.SetRemoteDescription(ref desc);
-        yield return op2;
-        if (!op2.IsError)
-        {
-            Debug.Log($"Client>>  SetRemoteDescription complete");
-        }
-        else
-        {
-            var error = op2.Error;
-            Debug.LogError($"Error Detail Type: {error.message}");
-            yield break;
-        }
+        // 우선은 직접 호출  클라이언트 입장 
+        WRTCClientPeer.Instance.RecvWRTCSetRemoteDescription(ref desc);
+        
+    }
+    #endregion
 
 
-        //////////////////////////////////////////////////////////////////////////
-        //
-        // 클라이언트 응답 처리 계속
-        Debug.Log($"Client>>  createAnswer start");
-        // Since the 'remote' side has no media stream we need
-        // to pass in the right constraints in order for it to
-        // accept the incoming offer of audio and video.
+    #region Server-Client Protocol
+    // 패킷으로 RTCSessionDescription, RTCIceCandidate 구조체 주고 받아야 함을 알수 있다.
+    // signaling을 webRTC에서는  공식 지원하지 않는다.
 
-        var op3 = clientPeer.CreateAnswer();
-        yield return op3;
-        if (!op3.IsError)
-        {
-            yield return OnCreateAnswerSuccess(clientPeer, op3.Desc);
-        }
-        else
-        {
-            Debug.LogError($"Error Detail Type: {op3.Error.message}");
-        }
+    public void RecvWRTCSetRemoteDescription(ref RTCSessionDescription desc)
+    {
+        StartCoroutine(WRTCSetRemoteDescription(desc));
     }
 
-    
-    public IEnumerator OnCreateAnswerSuccess(RTCPeerConnection clientPeer, RTCSessionDescription desc)
+    IEnumerator WRTCSetRemoteDescription(RTCSessionDescription desc)
     {
-        // 클라이언트 응답 처리 계속
-        // 파라미터 - RTCPeerConnection이 클라이언트 이다.
-
-        Debug.Log($"Answer from Client >> :\n{desc.sdp}");
-        Debug.Log($"Client >>  setLocalDescription start");
-        var op = clientPeer.SetLocalDescription(ref desc);
-        yield return op;
-
-        if (!op.IsError)
-        {
-            Debug.Log($"Client >> SetLocalDescription complete");
-        }
-        else
-        {
-            var error = op.Error;
-            Debug.LogError($"Error Detail Type: {error.message}");
-        }
-
-
-        ////////////////////////////////////////////////////////////////////////
-        // 서버 응답 처리.
         Debug.Log($"Server>> setRemoteDescription start");
 
         var op2 = serverPeerConnection.SetRemoteDescription(ref desc);
@@ -181,8 +133,14 @@ public class WRTCServerPeer : MonoBehaviour
             var error = op2.Error;
             Debug.LogError($"Error Detail Type: {error.message}");
         }
-
     }
+
+    public void RecvWRTCAddIceCandidate(RTCIceCandidate candidate)
+    {
+        serverPeerConnection.AddIceCandidate(candidate);
+        Debug.Log($"Server >> ICE candidate:\n {candidate.Candidate}");
+    }
+
     #endregion
 
 
@@ -210,9 +168,9 @@ public class WRTCServerPeer : MonoBehaviour
         // 모든 connection이 성공하고.  AddIceCandidate 해줘야 한다.
         // 다른 클라이언트 connection 정보 알아와야 한다.  이것을 webRTC에서는 signaling 라고 한다함.
         //
-        GetOtherClient().AddIceCandidate(candidate);
 
-        Debug.Log($"Server>> ICE candidate:\n {candidate.Candidate}");
+        // 우선은 직접 호출  클라이언트 입장 
+        WRTCClientPeer.Instance.RecvWRTCAddIceCandidate(candidate);
     }
 
     #endregion
