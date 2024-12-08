@@ -24,14 +24,6 @@ public class WRTCServerPeer : MonoBehaviour
     private bool videoUpdateStarted;
 
 
-    public RTCConfiguration GetSelectedSdpSemantics()
-    {
-        RTCConfiguration config = default;
-        config.iceServers = new[] { new RTCIceServer { urls = new[] { "stun:stun.l.google.com:19302" } } };
-
-        return config;
-    }
-
 
     private void Awake()
     {
@@ -76,14 +68,14 @@ public class WRTCServerPeer : MonoBehaviour
     public IEnumerator OnCreateOfferSuccess(RTCPeerConnection pc, RTCSessionDescription desc)
     {
 
-        Debug.Log($"Offer from Server >> \n{desc.sdp}");
-        Debug.Log($"Server >> setLocalDescription start");
+        //Debug.Log($"Offer from Server >> \n{desc.sdp}");
+        //Debug.Log($"Server >> setLocalDescription start");
         var op = pc.SetLocalDescription(ref desc);
         yield return op;
 
         if (!op.IsError)
         {
-            Debug.Log($"Server >> SetLocalDescription complete");
+            //Debug.Log($"Server >> SetLocalDescription complete");
         }
         else
         {
@@ -103,7 +95,8 @@ public class WRTCServerPeer : MonoBehaviour
         // signaling을 webRTC에서는  공식 지원하지 않는다.
 
         // 우선은 직접 호출  클라이언트 입장 
-        WRTCClientPeer.Instance.RecvWRTCSetRemoteDescription(ref desc);
+        string sdpPacket = new string(desc.sdp);
+        WRTCClientPeer.Instance.RecvWRTCSetRemoteDescription(sdpPacket);
         
     }
     #endregion
@@ -113,20 +106,24 @@ public class WRTCServerPeer : MonoBehaviour
     // 패킷으로 RTCSessionDescription, RTCIceCandidate 구조체 주고 받아야 함을 알수 있다.
     // signaling을 webRTC에서는  공식 지원하지 않는다.
 
-    public void RecvWRTCSetRemoteDescription(ref RTCSessionDescription desc)
+    public void RecvWRTCSetRemoteDescription(string  sdpPacket)
     {
+        RTCSessionDescription desc = new RTCSessionDescription();
+        desc.sdp = sdpPacket;
+        desc.type = RTCSdpType.Answer;
+
         StartCoroutine(WRTCSetRemoteDescription(desc));
     }
 
     IEnumerator WRTCSetRemoteDescription(RTCSessionDescription desc)
     {
-        Debug.Log($"Server>> setRemoteDescription start");
+        //Debug.Log($"Server>> setRemoteDescription start");
 
         var op2 = serverPeerConnection.SetRemoteDescription(ref desc);
         yield return op2;
         if (!op2.IsError)
         {
-            Debug.Log($"Server>> SetRemoteDescription complete");
+            //Debug.Log($"Server>> SetRemoteDescription complete");
         }
         else
         {
@@ -138,7 +135,7 @@ public class WRTCServerPeer : MonoBehaviour
     public void RecvWRTCAddIceCandidate(RTCIceCandidate candidate)
     {
         serverPeerConnection.AddIceCandidate(candidate);
-        Debug.Log($"Server >> ICE candidate:\n {candidate.Candidate}");
+        //Debug.Log($"Server >> ICE candidate:\n {candidate.Candidate}");
     }
 
     #endregion
@@ -254,7 +251,7 @@ public class WRTCServerPeer : MonoBehaviour
     // 여기가 모든 시작.
     public void OnCall()
     {
-        var configuration = GetSelectedSdpSemantics();
+        var configuration = WRTCUtil.GetSelectedSdpSemantics();
 
         serverPeerConnection = new RTCPeerConnection(ref configuration);
         serverPeerConnection.OnIceCandidate = serverOnIceCandidate;

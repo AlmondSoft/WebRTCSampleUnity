@@ -15,13 +15,6 @@ class WRTCClientPeer : MonoBehaviour
 {
     public static WRTCClientPeer Instance = null;
 
-    enum ProtocolOption
-    {
-        Default,
-        UDP,
-        TCP
-    }
-   
     //
     public RTCPeerConnection clientPeerConnection;
     private MediaStream receiveStream;
@@ -32,14 +25,6 @@ class WRTCClientPeer : MonoBehaviour
 
     private bool videoUpdateStarted;
 
-
-    public RTCConfiguration GetSelectedSdpSemantics()
-    {
-        RTCConfiguration config = default;
-        config.iceServers = new[] { new RTCIceServer { urls = new[] { "stun:stun.l.google.com:19302" } } };
-
-        return config;
-    }
 
     private void Awake()
     {
@@ -75,20 +60,26 @@ class WRTCClientPeer : MonoBehaviour
     // signaling을 webRTC에서는  공식 지원하지 않는다.
 
 
-    public void RecvWRTCSetRemoteDescription(ref RTCSessionDescription desc)
+    public void RecvWRTCSetRemoteDescription(string sdpPacket)
     {
+        // GINO
+        // 패킷 통신을 하기 위해서
+        RTCSessionDescription desc = new RTCSessionDescription();
+        desc.sdp = sdpPacket;
+        desc.type = RTCSdpType.Offer;
+
         StartCoroutine(WRTCSetRemoteDescription(desc));
     }
 
     IEnumerator WRTCSetRemoteDescription(RTCSessionDescription desc)
     {
-        Debug.Log($"Client>>  setRemoteDescription start");
+        //Debug.Log($"Client>>  setRemoteDescription start");
 
         var op2 = clientPeerConnection.SetRemoteDescription(ref desc);
         yield return op2;
         if (!op2.IsError)
         {
-            Debug.Log($"Client>>  SetRemoteDescription complete");
+            //Debug.Log($"Client>>  SetRemoteDescription complete");
         }
         else
         {
@@ -101,7 +92,7 @@ class WRTCClientPeer : MonoBehaviour
         //////////////////////////////////////////////////////////////////////////
         //
         // 클라이언트 응답 처리 계속
-        Debug.Log($"Client>>  createAnswer start");
+        //Debug.Log($"Client>>  createAnswer start");
         // Since the 'remote' side has no media stream we need
         // to pass in the right constraints in order for it to
         // accept the incoming offer of audio and video.
@@ -124,8 +115,8 @@ class WRTCClientPeer : MonoBehaviour
         // 클라이언트 응답 처리 계속
         // 파라미터 - RTCPeerConnection이 클라이언트 이다.
 
-        Debug.Log($"Answer from Client >> :\n{desc.sdp}");
-        Debug.Log($"Client >>  setLocalDescription start");
+        //Debug.Log($"Answer from Client >> :\n{desc.sdp}");
+        //Debug.Log($"Client >>  setLocalDescription start");
         var op = clientPeer.SetLocalDescription(ref desc);
         yield return op;
 
@@ -143,13 +134,14 @@ class WRTCClientPeer : MonoBehaviour
         ////////////////////////////////////////////////////////////////////////
         // 서버 응답 처리.
         // 우선은 직접 호출
-        WRTCServerPeer.Instance.RecvWRTCSetRemoteDescription(ref desc);
+        string sdpPacket = new string(desc.sdp);
+        WRTCServerPeer.Instance.RecvWRTCSetRemoteDescription(sdpPacket);
     }
 
     public void RecvWRTCAddIceCandidate(RTCIceCandidate candidate)
     {
         clientPeerConnection.AddIceCandidate(candidate);
-        Debug.Log($"Client>> ICE candidate:\n {candidate.Candidate}");
+        //Debug.Log($"Client>> ICE candidate:\n {candidate.Candidate}");
     }
 
     #endregion
@@ -178,6 +170,9 @@ class WRTCClientPeer : MonoBehaviour
         // 다른 클라이언트 connection 정보 알아와야 한다.  이것을 webRTC에서는 signaling 라고 한다함.
         //
         // 우선은 직접 호출  클라이언트 입장 
+        // 기본적으로 WebRTC에서 signaling는 지원안한다.
+
+        // candidate는 복잡함.
         WRTCServerPeer.Instance.RecvWRTCAddIceCandidate(candidate);
     }
 
@@ -256,7 +251,7 @@ class WRTCClientPeer : MonoBehaviour
 
     public void OnCall()
     {
-        var configuration = GetSelectedSdpSemantics();
+        var configuration = WRTCUtil.GetSelectedSdpSemantics();
 
         clientPeerConnection = new RTCPeerConnection(ref configuration);
         clientPeerConnection.OnIceCandidate = clientOnIceCandidate;

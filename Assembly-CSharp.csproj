@@ -65,6 +65,7 @@
     <Compile Include="Assets\PeerConnection\WRTCClientPeer.cs" />
     <Compile Include="Assets\TutorialInfo\Scripts\Readme.cs" />
     <Compile Include="Assets\PeerConnection\TestUI.cs" />
+    <Compile Include="Assets\PeerConnection\WRTCUtil.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="UnityEngine">
