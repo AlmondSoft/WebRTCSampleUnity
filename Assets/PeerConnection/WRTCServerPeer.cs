@@ -5,310 +5,322 @@ using UnityEngine;
 using Unity.WebRTC;
 using Unity.WebRTC.Samples;
 
-
-
-public class WRTCServerPeer : MonoBehaviour
+namespace JWebRTC
 {
-    public static WRTCServerPeer Instance = null;
 
-
-    public RTCPeerConnection serverPeerConnection;
-    public List<RTCRtpSender> serverPeerSenders;
-    public DelegateOnIceCandidate serverOnIceCandidate;
-    public DelegateOnIceConnectionChange serverOnIceConnectionChange;
-    public DelegateOnNegotiationNeeded serverOnNegotiationNeeded;
-
-
-    public MediaStream sendStream;
-
-    private bool videoUpdateStarted;
-
-
-
-    private void Awake()
+    public class WRTCServerPeer : MonoBehaviour
     {
-        Instance = this;
-        videoUpdateStarted = false;
-    }
+        public static WRTCServerPeer Instance = null;
 
-    private void Start()
-    {
-        serverPeerSenders = new List<RTCRtpSender>();
 
-        serverOnIceCandidate = candidate => { OnIceCandidate(serverPeerConnection, candidate); };
-        serverOnIceConnectionChange = state => { OnIceConnectionChange(serverPeerConnection, state); };
+        public RTCPeerConnection serverPeerConnection;
+        public List<RTCRtpSender> serverPeerSenders;
+        public DelegateOnIceCandidate serverOnIceCandidate;
+        public DelegateOnIceConnectionChange serverOnIceConnectionChange;
+        public DelegateOnNegotiationNeeded serverOnNegotiationNeeded;
 
-        // 기존 소켓의 accept 기능을 한다.
-        serverOnNegotiationNeeded = () => { StartCoroutine( PeerNegotiationNeeded(serverPeerConnection)); };
 
-    }
+        public MediaStream sendStream;
 
-    #region PeerNegotiationNeeded
-    public IEnumerator PeerNegotiationNeeded(RTCPeerConnection pc)
-    {
-        var op = pc.CreateOffer();
-        yield return op;
+        private bool videoUpdateStarted;
 
-        if (!op.IsError)
+
+
+        private void Awake()
         {
-            if (pc.SignalingState != RTCSignalingState.Stable)
+            Instance = this;
+            videoUpdateStarted = false;
+        }
+
+        private void Start()
+        {
+            serverPeerSenders = new List<RTCRtpSender>();
+
+            serverOnIceCandidate = candidate => { OnIceCandidate(serverPeerConnection, candidate); };
+            serverOnIceConnectionChange = state => { OnIceConnectionChange(serverPeerConnection, state); };
+
+            // 기존 소켓의 accept 기능을 한다.
+            serverOnNegotiationNeeded = () => { StartCoroutine(PeerNegotiationNeeded(serverPeerConnection)); };
+
+        }
+
+        #region PeerNegotiationNeeded
+        public IEnumerator PeerNegotiationNeeded(RTCPeerConnection pc)
+        {
+            var op = pc.CreateOffer();
+            yield return op;
+
+            if (!op.IsError)
             {
-                Debug.LogError($"Server >> signaling state is not stable.");
+                if (pc.SignalingState != RTCSignalingState.Stable)
+                {
+                    Debug.LogError($"Server >> signaling state is not stable.");
+                    yield break;
+                }
+
+                yield return StartCoroutine(OnCreateOfferSuccess(pc, op.Desc));
+            }
+            else
+            {
+                Debug.LogError($"Error Detail Type: {op.Error.message}");
+            }
+        }
+
+        public IEnumerator OnCreateOfferSuccess(RTCPeerConnection pc, RTCSessionDescription desc)
+        {
+            //Debug.Log($"Offer from Server >> \n{desc.sdp}");
+            //Debug.Log($"Server >> setLocalDescription start");
+            var op = pc.SetLocalDescription(ref desc);
+            yield return op;
+
+            if (!op.IsError)
+            {
+                //Debug.Log($"Server >> SetLocalDescription complete");
+            }
+            else
+            {
+                var error = op.Error;
+                Debug.LogError($"Error Detail Type: {error.message}");
                 yield break;
             }
 
-            yield return StartCoroutine(OnCreateOfferSuccess(pc, op.Desc));
+            /////////////////////////////////////////////////////////////////////////////////////////////////////
+            // 클라이언트에게 응답 요청.
+
+            // 처음 WebRTC 분석할때 . 접속 정보나 커낵션이 어느 부분인지 궁금했는데. 여기가 그 부분
+            // 기존 소켓으로 비교하면 accept하고 클라이언트 연결하는 부분.
+            // 다른 클라이언트 connection 정보 알아와야 한다.  이것을 webRTC에서는 signaling 라고 한다함.
+            //
+            // signaling을 webRTC에서는  공식 지원하지 않는다.  정보를 주고 받기 위해 다른 서버 접속 필요함.
+
+            ////////////////////////////////////////////////////////////////////////////////////////////////////
+            // 클라이언트 응답 처리
+            // 우선은 직접 호출  클라이언트 입장 
+            string sdpPacket = new string(desc.sdp);
+            WRTCClientPeer.Instance.RecvWRTCSetRemoteDescription(sdpPacket);
+
         }
-        else
-        {
-            Debug.LogError($"Error Detail Type: {op.Error.message}");
-        }
-    }
-
-    public IEnumerator OnCreateOfferSuccess(RTCPeerConnection pc, RTCSessionDescription desc)
-    {
-
-        //Debug.Log($"Offer from Server >> \n{desc.sdp}");
-        //Debug.Log($"Server >> setLocalDescription start");
-        var op = pc.SetLocalDescription(ref desc);
-        yield return op;
-
-        if (!op.IsError)
-        {
-            //Debug.Log($"Server >> SetLocalDescription complete");
-        }
-        else
-        {
-            var error = op.Error;
-            Debug.LogError($"Error Detail Type: {error.message}");
-            yield break;
-        }
+        #endregion
 
 
-        ////////////////////////////////////////////////////////////////////////////////////////////////////
-        // 클라이언트 응답 처리
-
-        // 처음 WebRTC 분석할때 . 접속 정보나 커낵션이 어느 부분인지 궁금했는데. 여기가 그 부분
-        // 기존 소켓으로 비교하면 accept하고 클라이언트 연결하는 부분.
-        // 다른 클라이언트 connection 정보 알아와야 한다.  이것을 webRTC에서는 signaling 라고 한다함.
-        //
+        #region Server-Client Protocol
+        // 패킷으로 RTCSessionDescription, RTCIceCandidate 구조체 주고 받아야 함을 알수 있다.
         // signaling을 webRTC에서는  공식 지원하지 않는다.
 
-        // 우선은 직접 호출  클라이언트 입장 
-        string sdpPacket = new string(desc.sdp);
-        WRTCClientPeer.Instance.RecvWRTCSetRemoteDescription(sdpPacket);
-        
-    }
-    #endregion
-
-
-    #region Server-Client Protocol
-    // 패킷으로 RTCSessionDescription, RTCIceCandidate 구조체 주고 받아야 함을 알수 있다.
-    // signaling을 webRTC에서는  공식 지원하지 않는다.
-
-    public void RecvWRTCSetRemoteDescription(string  sdpPacket)
-    {
-        RTCSessionDescription desc = new RTCSessionDescription();
-        desc.sdp = sdpPacket;
-        desc.type = RTCSdpType.Answer;
-
-        StartCoroutine(WRTCSetRemoteDescription(desc));
-    }
-
-    IEnumerator WRTCSetRemoteDescription(RTCSessionDescription desc)
-    {
-        //Debug.Log($"Server>> setRemoteDescription start");
-
-        var op2 = serverPeerConnection.SetRemoteDescription(ref desc);
-        yield return op2;
-        if (!op2.IsError)
+        public void RecvWRTCSetRemoteDescription(string sdpPacket)
         {
-            //Debug.Log($"Server>> SetRemoteDescription complete");
-        }
-        else
-        {
-            var error = op2.Error;
-            Debug.LogError($"Error Detail Type: {error.message}");
-        }
-    }
+            RTCSessionDescription desc = new RTCSessionDescription();
+            desc.sdp = sdpPacket;
+            desc.type = RTCSdpType.Answer;
 
-    public void RecvWRTCAddIceCandidate(RTCIceCandidate candidate)
-    {
-        serverPeerConnection.AddIceCandidate(candidate);
-        //Debug.Log($"Server >> ICE candidate:\n {candidate.Candidate}");
-    }
-
-    #endregion
-
-
-    #region OnIceCandidate
-
-    private void OnIceCandidate(RTCPeerConnection pc, RTCIceCandidate candidate)
-    {
-        /*
-        switch ((ProtocolOption)dropDownProtocol.value)
-        {
-            case ProtocolOption.Default:
-                break;
-            case ProtocolOption.UDP:
-                if (candidate.Protocol != RTCIceProtocol.Udp)
-                    return;
-                break;
-            case ProtocolOption.TCP:
-                if (candidate.Protocol != RTCIceProtocol.Tcp)
-                    return;
-                break;
-        }*/
-
-
-
-        // 모든 connection이 성공하고.  AddIceCandidate 해줘야 한다.
-        // 다른 클라이언트 connection 정보 알아와야 한다.  이것을 webRTC에서는 signaling 라고 한다함.
-        //
-
-        // 우선은 직접 호출  클라이언트 입장 
-        WRTCClientPeer.Instance.RecvWRTCAddIceCandidate(candidate);
-    }
-
-    #endregion
-
-
-    #region OnIceConnectionChange
-
-    private void OnIceConnectionChange(RTCPeerConnection pc, RTCIceConnectionState state)
-    {
-        Debug.Log($"Server>> IceConnectionState: {state}");
-
-        if (state == RTCIceConnectionState.Connected || state == RTCIceConnectionState.Completed)
-        {
-            StartCoroutine(CheckStats(pc));
-        }
-    }
-
-    IEnumerator CheckStats(RTCPeerConnection pc)
-    {
-        yield return new WaitForSeconds(0.1f);
-        if (pc == null)
-            yield break;
-
-        var op = pc.GetStats();
-        yield return op;
-        if (op.IsError)
-        {
-            Debug.LogErrorFormat("RTCPeerConnection.GetStats failed: {0}", op.Error);
-            yield break;
+            StartCoroutine(WRTCSetRemoteDescription(desc));
         }
 
-        RTCStatsReport report = op.Value;
-        RTCIceCandidatePairStats activeCandidatePairStats = null;
-        RTCIceCandidateStats remoteCandidateStats = null;
-
-        foreach (var transportStatus in report.Stats.Values.OfType<RTCTransportStats>())
+        IEnumerator WRTCSetRemoteDescription(RTCSessionDescription desc)
         {
-            if (report.Stats.TryGetValue(transportStatus.selectedCandidatePairId, out var tmp))
+            //Debug.Log($"Server>> setRemoteDescription start");
+
+            var op2 = serverPeerConnection.SetRemoteDescription(ref desc);
+            yield return op2;
+            if (!op2.IsError)
             {
-                activeCandidatePairStats = tmp as RTCIceCandidatePairStats;
+                //Debug.Log($"Server>> SetRemoteDescription complete");
+            }
+            else
+            {
+                var error = op2.Error;
+                Debug.LogError($"Error Detail Type: {error.message}");
             }
         }
 
-        if (activeCandidatePairStats == null || string.IsNullOrEmpty(activeCandidatePairStats.remoteCandidateId))
+        public void RecvWRTCAddIceCandidate(string Candidate, string SdpMid, int SdpMLineIndex)
         {
-            yield break;
+            RTCIceCandidateInit init = new RTCIceCandidateInit();
+            init.candidate = new string(Candidate);
+            init.sdpMid = new string(SdpMid);
+            init.sdpMLineIndex = SdpMLineIndex;
+
+            serverPeerConnection.AddIceCandidate(new RTCIceCandidate(init));
+            
+            //Debug.Log($"Server >> ICE candidate:\n {candidate.Candidate}");
         }
 
-        foreach (var iceCandidateStatus in report.Stats.Values.OfType<RTCIceCandidateStats>())
+        #endregion
+
+
+        #region OnIceCandidate
+
+        private void OnIceCandidate(RTCPeerConnection pc, RTCIceCandidate candidate)
         {
-            if (iceCandidateStatus.Id == activeCandidatePairStats.remoteCandidateId)
+            /*
+            switch ((ProtocolOption)dropDownProtocol.value)
             {
-                remoteCandidateStats = iceCandidateStatus;
+                case ProtocolOption.Default:
+                    break;
+                case ProtocolOption.UDP:
+                    if (candidate.Protocol != RTCIceProtocol.Udp)
+                        return;
+                    break;
+                case ProtocolOption.TCP:
+                    if (candidate.Protocol != RTCIceProtocol.Tcp)
+                        return;
+                    break;
+            }*/
+
+
+            /////////////////////////////////////////////////////////////////////////////////////////////////////
+            // 클라이언트에게 서버 접속 정보 준다. 
+
+            // 모든 connection이 성공하고.  AddIceCandidate 해줘야 한다.
+            // 다른 클라이언트 connection 정보 알아와야 한다.  이것을 webRTC에서는 signaling 라고 한다함.
+            //
+
+            // 우선은 직접 호출  클라이언트 입장 
+            WRTCClientPeer.Instance.RecvWRTCAddIceCandidate(candidate.Candidate, candidate.SdpMid, (int)candidate.SdpMLineIndex);
+        }
+
+        #endregion
+
+
+        #region OnIceConnectionChange
+
+        private void OnIceConnectionChange(RTCPeerConnection pc, RTCIceConnectionState state)
+        {
+            Debug.Log($"Server>> IceConnectionState: {state}");
+
+            if (state == RTCIceConnectionState.Connected || state == RTCIceConnectionState.Completed)
+            {
+                StartCoroutine(CheckStats(pc));
             }
         }
 
-        if (remoteCandidateStats == null || string.IsNullOrEmpty(remoteCandidateStats.Id))
+        IEnumerator CheckStats(RTCPeerConnection pc)
         {
-            yield break;
-        }
+            yield return new WaitForSeconds(0.1f);
+            if (pc == null)
+                yield break;
 
-        Debug.Log($"Server>> candidate stats Id:{remoteCandidateStats.Id}, Type:{remoteCandidateStats.candidateType}");
-
-        var updateText = TestUI.Instance.localCandidateId;
-        updateText.text = remoteCandidateStats.Id;
-    }
-
-    #endregion
-
-
-
-    #region 외부 UI 인터페이스
-    public void OnStart(Camera cam)
-    {
-        if (sendStream == null)
-        {
-            sendStream = cam.CaptureStream(WebRTCSettings.StreamSize.x, WebRTCSettings.StreamSize.y);
-        }
-    }
-
-    // 여기가 모든 시작.
-    public void OnCall()
-    {
-        var configuration = WRTCUtil.GetSelectedSdpSemantics();
-
-        serverPeerConnection = new RTCPeerConnection(ref configuration);
-        serverPeerConnection.OnIceCandidate = serverOnIceCandidate;
-        serverPeerConnection.OnIceConnectionChange = serverOnIceConnectionChange;
-        serverPeerConnection.OnNegotiationNeeded = serverOnNegotiationNeeded;
-
-        AddTracks();
-    }
-
-    public void OnHangUp()
-    {
-        RemoveTracks();
-
-        serverPeerConnection.Close();
-        serverPeerConnection.Dispose();
-        serverPeerConnection = null;
-    }
-
-    public void OnRestartIce()
-    {
-        serverPeerConnection.RestartIce();
-    }
-
-    public void AddTracks()
-    {
-        foreach (var track in sendStream.GetTracks())
-        {
-            serverPeerSenders.Add(serverPeerConnection.AddTrack(track, sendStream));
-        }
-
-        if (WebRTCSettings.UseVideoCodec != null)
-        {
-            var codecs = new[] { WebRTCSettings.UseVideoCodec };
-            foreach (var transceiver in serverPeerConnection.GetTransceivers())
+            var op = pc.GetStats();
+            yield return op;
+            if (op.IsError)
             {
-                if (serverPeerSenders.Contains(transceiver.Sender))
+                Debug.LogErrorFormat("RTCPeerConnection.GetStats failed: {0}", op.Error);
+                yield break;
+            }
+
+            RTCStatsReport report = op.Value;
+            RTCIceCandidatePairStats activeCandidatePairStats = null;
+            RTCIceCandidateStats remoteCandidateStats = null;
+
+            foreach (var transportStatus in report.Stats.Values.OfType<RTCTransportStats>())
+            {
+                if (report.Stats.TryGetValue(transportStatus.selectedCandidatePairId, out var tmp))
                 {
-                    transceiver.SetCodecPreferences(codecs);
+                    activeCandidatePairStats = tmp as RTCIceCandidatePairStats;
                 }
             }
+
+            if (activeCandidatePairStats == null || string.IsNullOrEmpty(activeCandidatePairStats.remoteCandidateId))
+            {
+                yield break;
+            }
+
+            foreach (var iceCandidateStatus in report.Stats.Values.OfType<RTCIceCandidateStats>())
+            {
+                if (iceCandidateStatus.Id == activeCandidatePairStats.remoteCandidateId)
+                {
+                    remoteCandidateStats = iceCandidateStatus;
+                }
+            }
+
+            if (remoteCandidateStats == null || string.IsNullOrEmpty(remoteCandidateStats.Id))
+            {
+                yield break;
+            }
+
+            Debug.Log($"Server>> candidate stats Id:{remoteCandidateStats.Id}, Type:{remoteCandidateStats.candidateType}");
+
+            var updateText = TestUI.Instance.localCandidateId;
+            updateText.text = remoteCandidateStats.Id;
         }
 
-        if (!videoUpdateStarted)
+        #endregion
+
+
+
+        #region 외부 UI 인터페이스
+        public void OnStart(Camera cam)
         {
-            StartCoroutine(WebRTC.Update());
-            videoUpdateStarted = true;
+            if (sendStream == null)
+            {
+                sendStream = cam.CaptureStream(WebRTCSettings.StreamSize.x, WebRTCSettings.StreamSize.y);
+            }
         }
+
+        // 여기가 모든 시작.
+        public void OnCall()
+        {
+            var configuration = WRTCUtil.GetSelectedSdpSemantics();
+
+            serverPeerConnection = new RTCPeerConnection(ref configuration);
+            serverPeerConnection.OnIceCandidate = serverOnIceCandidate;
+            serverPeerConnection.OnIceConnectionChange = serverOnIceConnectionChange;
+            serverPeerConnection.OnNegotiationNeeded = serverOnNegotiationNeeded;
+
+            AddTracks();
+        }
+
+        public void OnHangUp()
+        {
+            RemoveTracks();
+
+            serverPeerConnection.Close();
+            serverPeerConnection.Dispose();
+            serverPeerConnection = null;
+        }
+
+        public void OnRestartIce()
+        {
+            serverPeerConnection.RestartIce();
+        }
+
+        public void AddTracks()
+        {
+            foreach (var track in sendStream.GetTracks())
+            {
+                serverPeerSenders.Add(serverPeerConnection.AddTrack(track, sendStream));
+            }
+
+            if (WebRTCSettings.UseVideoCodec != null)
+            {
+                var codecs = new[] { WebRTCSettings.UseVideoCodec };
+                foreach (var transceiver in serverPeerConnection.GetTransceivers())
+                {
+                    if (serverPeerSenders.Contains(transceiver.Sender))
+                    {
+                        transceiver.SetCodecPreferences(codecs);
+                    }
+                }
+            }
+
+            if (!videoUpdateStarted)
+            {
+                StartCoroutine(WebRTC.Update());
+                videoUpdateStarted = true;
+            }
+        }
+
+        public void RemoveTracks()
+        {
+            foreach (var sender in serverPeerSenders)
+            {
+                serverPeerConnection.RemoveTrack(sender);
+            }
+
+            serverPeerSenders.Clear();
+        }
+        #endregion
     }
 
-    public void RemoveTracks()
-    {
-        foreach (var sender in serverPeerSenders)
-        {
-            serverPeerConnection.RemoveTrack(sender);
-        }
 
-        serverPeerSenders.Clear();
-    }
-    #endregion
 }
