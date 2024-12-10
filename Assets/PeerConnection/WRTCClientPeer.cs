@@ -9,7 +9,7 @@ namespace JWebRTC
 {
     class WRTCClientPeer : MonoBehaviour
     {
-        public static WRTCClientPeer Instance = null;
+        //public static WRTCClientPeer Instance = null;
 
         //
         public RTCPeerConnection clientPeerConnection;
@@ -51,7 +51,7 @@ namespace JWebRTC
 
         private void Awake()
         {
-            Instance = this;
+            //Instance = this;
             
         }
 

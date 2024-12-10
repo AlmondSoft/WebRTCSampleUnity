@@ -57,7 +57,7 @@ namespace JWebRTC
             //  11111111111111111111111111111111111111111111111111  에서 만들어진 sdpPacketWRTC
 
             if (sdpPacketWRTC != "")
-                WRTCClientPeer.Instance.RecvWRTCSetRemoteDescription(sdpPacketWRTC);
+                WRTCCore.Instance.RecvWRTCSetRemoteDescription(sdpPacketWRTC);
         }
 
         public void RecvWRTCSetRemoteDescription(string sdpPacket)
@@ -107,13 +107,13 @@ namespace JWebRTC
         void SendWRTCAddIceCandidate()
         {
             // 서버의 Candidate정보를 전달
-            WRTCClientPeer.Instance.RecvWRTCAddIceCandidate(CandidateWRTC, SdpMidWRTC, SdpMLineIndexWRTC);
+            WRTCCore.Instance.RecvWRTCAddIceCandidate(CandidateWRTC, SdpMidWRTC, SdpMLineIndexWRTC);
         }
 
         // 접속이 끊어지거나 상태가 변경됨
         void SendChangedStaus(RTCIceConnectionState state)
         {
-
+            WRTCCore.Instance.ChangeStatusServer(state);
         }
         
 

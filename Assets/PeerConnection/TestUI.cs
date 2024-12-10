@@ -17,6 +17,8 @@ public class TestUI : MonoBehaviour
     [SerializeField]
     private Button client0_CallButton, client0_HangUpButton;
 
+    [SerializeField]
+    private Button client1_CallButton, client1_HangUpButton;
 
     [SerializeField] public Text localCandidateId;
     [SerializeField] public Text remoteCandidateId;
@@ -27,6 +29,7 @@ public class TestUI : MonoBehaviour
     [SerializeField] private Transform rotateObject;
 
     [SerializeField] private RawImage client0_receiveImage;
+    [SerializeField] private RawImage client1_receiveImage;
 
 
     private void Awake()
@@ -57,10 +60,11 @@ public class TestUI : MonoBehaviour
         serverHangUpButton.interactable = false;
 
         //
-        WRTCClientPeer.Instance.InitReceiveStream((texture) =>
+        WRTCCore.Instance.InitReceiveStream(0, (texture) =>
         {
             client0_receiveImage.texture = texture;
         });
+
     }
 
     // Update is called once per frame
@@ -98,14 +102,14 @@ public class TestUI : MonoBehaviour
 
         client0_receiveImage.color = Color.white;
 
-        WRTCClientPeer.Instance.OnCall();
+        WRTCCore.Instance.OnCall(0);
     }
     public void HangUpClient_0()
     {
         client0_HangUpButton.interactable = false;
         client0_receiveImage.color = Color.black;
 
-        WRTCClientPeer.Instance.OnHangUp();
+        WRTCCore.Instance.OnHangUp(0);
     }
 
 

@@ -791,7 +791,7 @@ GameObject:
   - component: {fileID: 743903395}
   - component: {fileID: 743903394}
   m_Layer: 5
-  m_Name: Client_HangUp
+  m_Name: Client_HangUp_1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -911,7 +911,7 @@ GameObject:
   - component: {fileID: 784661672}
   - component: {fileID: 784661671}
   m_Layer: 5
-  m_Name: ReceiveRawImage
+  m_Name: ReceiveRawImage_1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1302,12 +1302,15 @@ MonoBehaviour:
   serverHangUpButton: {fileID: 9434869}
   client0_CallButton: {fileID: 2066401219}
   client0_HangUpButton: {fileID: 1344461799}
+  client1_CallButton: {fileID: 1024583872}
+  client1_HangUpButton: {fileID: 743903394}
   localCandidateId: {fileID: 1021020669}
   remoteCandidateId: {fileID: 1039299226}
   cam: {fileID: 934963288}
   sourceImage: {fileID: 1839397354}
   rotateObject: {fileID: 1823897046}
   client0_receiveImage: {fileID: 2123783124}
+  client1_receiveImage: {fileID: 784661671}
 --- !u!1 &874312344
 GameObject:
   m_ObjectHideFlags: 0
@@ -1758,7 +1761,7 @@ GameObject:
   - component: {fileID: 1024583873}
   - component: {fileID: 1024583872}
   m_Layer: 5
-  m_Name: Client_Call
+  m_Name: Client_Call_1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2415,7 +2418,7 @@ GameObject:
   - component: {fileID: 1344461800}
   - component: {fileID: 1344461799}
   m_Layer: 5
-  m_Name: Client_HangUp
+  m_Name: Client_HangUp_0
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -3534,7 +3537,7 @@ GameObject:
   - component: {fileID: 2066401220}
   - component: {fileID: 2066401219}
   m_Layer: 5
-  m_Name: Client_Call
+  m_Name: Client_Call_0
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -3733,7 +3736,7 @@ GameObject:
   - component: {fileID: 2123783125}
   - component: {fileID: 2123783124}
   m_Layer: 5
-  m_Name: ReceiveRawImage
+  m_Name: ReceiveRawImage_0
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
