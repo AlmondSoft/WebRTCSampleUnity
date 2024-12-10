@@ -46,12 +46,18 @@ public class TestUI : MonoBehaviour
 
         client0_CallButton.onClick.AddListener(CallClient_0);
         client0_HangUpButton.onClick.AddListener(HangUpClient_0);
+
+        client1_CallButton.onClick.AddListener(CallClient_1);
+        client1_HangUpButton.onClick.AddListener(HangUpClient_1);
     }
 
     void Start()
     {
         client0_CallButton.interactable = true;
         client0_HangUpButton.interactable = false;
+
+        client1_CallButton.interactable = true;
+        client1_HangUpButton.interactable = false;
 
         serverCallButton.interactable = false;
         serverSendDescButton.interactable = false;
@@ -63,6 +69,12 @@ public class TestUI : MonoBehaviour
         WRTCCore.Instance.InitReceiveStream(0, (texture) =>
         {
             client0_receiveImage.texture = texture;
+        });
+
+        //
+        WRTCCore.Instance.InitReceiveStream(1, (texture) =>
+        {
+            client1_receiveImage.texture = texture;
         });
 
     }
@@ -111,6 +123,25 @@ public class TestUI : MonoBehaviour
 
         WRTCCore.Instance.OnHangUp(0);
     }
+
+    private void CallClient_1()
+    {
+        client1_CallButton.interactable = false;
+        client1_HangUpButton.interactable = true;
+        serverSendDescButton.interactable = true;
+
+        client1_receiveImage.color = Color.white;
+
+        WRTCCore.Instance.OnCall(1);
+    }
+    public void HangUpClient_1()
+    {
+        client1_HangUpButton.interactable = false;
+        client1_receiveImage.color = Color.black;
+
+        WRTCCore.Instance.OnHangUp(1);
+    }
+
 
 
     private void SendWRTCSetRemoteDescription()
