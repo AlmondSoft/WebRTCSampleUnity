@@ -2,18 +2,24 @@ using UnityEngine;
 using UnityEngine.UI;
 using JWebRTC;
 
+using TMPro;
 
 public class TestUI : MonoBehaviour
 {
     public static TestUI Instance = null;
 
     [SerializeField] private Button startButton;
-    [SerializeField] private Button callButton;
+    [SerializeField] private Button serverCallButton, clientCallButton;
+    [SerializeField] private Button serverSendDescButton;
     [SerializeField] private Button restartButton;
-    [SerializeField] private Button hangUpButton;
+    [SerializeField] private Button serverHangUpButton, clientHangUpButton;
+
     [SerializeField] public Text localCandidateId;
     [SerializeField] public Text remoteCandidateId;
-    [SerializeField] private Dropdown dropDownProtocol;
+    [SerializeField] public TMP_Text midText, candidaiteText, lineIndexText;
+
+    [SerializeField] public TMP_Text c_midText, c_candidaiteText, c_lineIndexText;
+    //[SerializeField] private Dropdown dropDownProtocol;
 
     [SerializeField] private Camera cam;
     [SerializeField] public RawImage sourceImage;
@@ -26,17 +32,27 @@ public class TestUI : MonoBehaviour
         Instance = this;
 
         startButton.onClick.AddListener(OnStart);
-        callButton.onClick.AddListener(Call);
+        
+        clientCallButton.onClick.AddListener(CallClient);
+        serverCallButton.onClick.AddListener(CallServer);
+        serverSendDescButton.onClick.AddListener(SendWRTCSetRemoteDescription);
+
         restartButton.onClick.AddListener(RestartIce);
-        hangUpButton.onClick.AddListener(HangUp);
+        clientHangUpButton.onClick.AddListener(HangUpClient);
+        serverHangUpButton.onClick.AddListener(HangUpServer);
 
     }
 
     void Start()
     {
-        callButton.interactable = false;
+        clientCallButton.interactable = false;
+        serverCallButton.interactable = false;
+        serverSendDescButton.interactable = false;
+
         restartButton.interactable = false;
-        hangUpButton.interactable = false;
+
+        clientHangUpButton.interactable = false;
+        serverHangUpButton.interactable = false;
 
 
     }
@@ -56,11 +72,10 @@ public class TestUI : MonoBehaviour
     private void OnStart()
     {
         startButton.interactable = false;
-        callButton.interactable = true;
-
+        serverCallButton.interactable = true;
+       
 
         //
-        WRTCClientPeer.Instance.OnStart(cam);
         WRTCServerPeer.Instance.OnStart(cam);
 
         // 반드시 여기서 
@@ -69,13 +84,31 @@ public class TestUI : MonoBehaviour
     }
 
 
-    private void Call()
+    private void CallClient()
     {
-        callButton.interactable = false;
-        hangUpButton.interactable = true;
-        restartButton.interactable = true;
+        clientCallButton.interactable = false;
+        clientHangUpButton.interactable = true;
+
+        serverSendDescButton.interactable = true;
 
         WRTCClientPeer.Instance.OnCall();
+    }
+
+    private void SendWRTCSetRemoteDescription()
+    {
+        serverSendDescButton.interactable = false;
+
+        WRTCServerPeer.Instance.SendWRTCSetRemoteDescription();
+    }
+
+    private void CallServer()
+    {
+        serverCallButton.interactable = false;
+        serverHangUpButton.interactable = true;
+        restartButton.interactable = true;
+
+        clientCallButton.interactable = true;
+
         WRTCServerPeer.Instance.OnCall();
     }
 
@@ -83,19 +116,25 @@ public class TestUI : MonoBehaviour
     {
         restartButton.interactable = false;
 
-        WRTCClientPeer.Instance.OnRestartIce();
         WRTCServerPeer.Instance.OnRestartIce();
     }
 
 
-    public void HangUp()
+    public void HangUpClient()
     {
-        callButton.interactable = true;
-        restartButton.interactable = false;
-        hangUpButton.interactable = false;
+        clientHangUpButton.interactable = false;
         receiveImage.color = Color.black;
 
         WRTCClientPeer.Instance.OnHangUp();
+    }
+
+    public void HangUpServer()
+    {
+        serverCallButton.interactable = true;
+        restartButton.interactable = false;
+
+        sourceImage.color = Color.black;
+
         WRTCServerPeer.Instance.OnHangUp();
     }
 

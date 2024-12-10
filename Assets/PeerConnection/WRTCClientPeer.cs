@@ -51,13 +51,15 @@ namespace JWebRTC
             };
         }
 
-        #region Server-Client Protocol
+        #region 네트워크 프로토콜
         // 패킷으로 RTCSessionDescription, RTCIceCandidate 구조체 주고 받아야 함을 알수 있다.
         // signaling을 webRTC에서는  공식 지원하지 않는다.
 
 
         public void RecvWRTCSetRemoteDescription(string sdpPacket)
         {
+            //  2222222222222222222222222222222222222  >>>>>>>>>>>>>>>>>
+
             // GINO
             // 패킷 통신을 하기 위해서
             RTCSessionDescription desc = new RTCSessionDescription();
@@ -127,20 +129,30 @@ namespace JWebRTC
             }
 
 
+            //  서버에게 전송
+            //  3333333333333333333333333333333  >>>>>>>>>>>>>>>>>
+
             ////////////////////////////////////////////////////////////////////////
             // 서버 응답 처리.
-            // 우선은 직접 호출
-            string sdpPacket = new string(desc.sdp);
+
+            // 패킷 통신 하지만. 결국은 
+            //  WRTCServerPeer.Instance.RecvWRTCSetRemoteDescription(sdpPacket); 호출 됨.
+            SendWRTCSetRemoteDescription(new string(desc.sdp));
+        }
+        //
+
+        void SendWRTCSetRemoteDescription(string sdpPacket)
+        {
+
             WRTCServerPeer.Instance.RecvWRTCSetRemoteDescription(sdpPacket);
         }
 
-        /*
-        public void RecvWRTCAddIceCandidate(RTCIceCandidate candidate)
+        void SendWRTCAddIceCandidate(string Candidate, string SdpMid, int SdpMLineIndex)
         {
-            clientPeerConnection.AddIceCandidate(candidate);
-            //Debug.Log($"Client>> ICE candidate:\n {candidate.Candidate}");
+            WRTCServerPeer.Instance.RecvWRTCAddIceCandidate(Candidate, SdpMid, SdpMLineIndex);
         }
-        */
+
+        // 최종 AddIceCandidate
         public void RecvWRTCAddIceCandidate(string Candidate, string SdpMid, int SdpMLineIndex)
         {
             //clientPeerConnection.AddIceCandidate(candidate);
@@ -151,7 +163,15 @@ namespace JWebRTC
             init.sdpMid = new string(SdpMid);
             init.sdpMLineIndex = SdpMLineIndex;
 
+            //    >>>>>>>>>>>>>>>>>
+            
             clientPeerConnection.AddIceCandidate(new RTCIceCandidate(init));
+        }
+
+        // 접속이 끊어지거나 상태가 변경됨
+        void SendChangedStaus(RTCIceConnectionState state)
+        {
+            Debug.Log($"Client >> SendChangedStaus: {state}");
         }
 
         #endregion
@@ -175,6 +195,11 @@ namespace JWebRTC
                     break;
             }*/
 
+            TestUI.Instance.c_midText.text = candidate.SdpMid;
+            TestUI.Instance.c_candidaiteText.text = candidate.Candidate;
+            TestUI.Instance.c_lineIndexText.text = $"{(int)candidate.SdpMLineIndex}";
+
+            //    >>>>>>>>>>>>>>>>>
 
             // 모든 connection이 성공하고.  AddIceCandidate 해줘야 한다.
             // 다른 클라이언트 connection 정보 알아와야 한다.  이것을 webRTC에서는 signaling 라고 한다함.
@@ -182,8 +207,9 @@ namespace JWebRTC
             // 우선은 직접 호출  클라이언트 입장 
             // 기본적으로 WebRTC에서 signaling는 지원안한다.
 
-            // candidate는 복잡함.
-            WRTCServerPeer.Instance.RecvWRTCAddIceCandidate(candidate.Candidate, candidate.SdpMid, (int)candidate.SdpMLineIndex);
+            // 패킷 통신 하지만. 결국은 
+           
+            SendWRTCAddIceCandidate(candidate.Candidate, candidate.SdpMid, (int)candidate.SdpMLineIndex);
         }
 
         #endregion
@@ -193,11 +219,13 @@ namespace JWebRTC
 
         private void OnIceConnectionChange(RTCPeerConnection pc, RTCIceConnectionState state)
         {
-            Debug.Log($"Client >> IceConnectionState: {state}");
-
             if (state == RTCIceConnectionState.Connected || state == RTCIceConnectionState.Completed)
             {
                 StartCoroutine(CheckStats(pc));
+            }
+            else
+            {
+                SendChangedStaus(state);
             }
         }
 
