@@ -21,18 +21,14 @@ namespace JWebRTC
 
         private bool videoUpdateStarted;
 
+        System.Action<Texture> receiveTextureFunc;
 
-        private void Awake()
+        public void InitReceiveStream(System.Action<Texture>  func)
         {
-            Instance = this;
+            receiveTextureFunc = func;
 
+            //
             receiveStream = new MediaStream();
-        }
-
-        private void Start()
-        {
-            clientOnIceCandidate = candidate => { OnIceCandidate(clientPeerConnection, candidate); };
-            clientOnIceConnectionChange = state => { OnIceConnectionChange(clientPeerConnection, state); };
 
             clientOntrack = e =>
             {
@@ -45,11 +41,27 @@ namespace JWebRTC
                 {
                     track.OnVideoReceived += tex =>
                     {
-                        TestUI.Instance.SetReceiveImage(tex);
+                        receiveTextureFunc.Invoke(tex);
+                        //TestUI.Instance.SetReceiveImage(tex);
                     };
                 }
             };
         }
+
+
+        private void Awake()
+        {
+            Instance = this;
+            
+        }
+
+        private void Start()
+        {
+            clientOnIceCandidate = candidate => { OnIceCandidate(clientPeerConnection, candidate); };
+            clientOnIceConnectionChange = state => { OnIceConnectionChange(clientPeerConnection, state); };
+        }
+
+
 
         #region 네트워크 프로토콜
         // 패킷으로 RTCSessionDescription, RTCIceCandidate 구조체 주고 받아야 함을 알수 있다.
@@ -194,10 +206,6 @@ namespace JWebRTC
                         return;
                     break;
             }*/
-
-            TestUI.Instance.c_midText.text = candidate.SdpMid;
-            TestUI.Instance.c_candidaiteText.text = candidate.Candidate;
-            TestUI.Instance.c_lineIndexText.text = $"{(int)candidate.SdpMLineIndex}";
 
             //    >>>>>>>>>>>>>>>>>
 

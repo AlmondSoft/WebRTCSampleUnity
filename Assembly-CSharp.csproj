@@ -63,6 +63,7 @@
   <ItemGroup>
     <Compile Include="Assets\PeerConnection\WRTCServerPeer.cs" />
     <Compile Include="Assets\PeerConnection\WRTCClientPeer.cs" />
+    <Compile Include="Assets\PeerConnection\WRTCCore.cs" />
     <Compile Include="Assets\TutorialInfo\Scripts\Readme.cs" />
     <Compile Include="Assets\PeerConnection\TestUI.cs" />
     <Compile Include="Assets\PeerConnection\WRTCUtil.cs" />

@@ -9,22 +9,24 @@ public class TestUI : MonoBehaviour
     public static TestUI Instance = null;
 
     [SerializeField] private Button startButton;
-    [SerializeField] private Button serverCallButton, clientCallButton;
+    [SerializeField] private Button serverCallButton;
     [SerializeField] private Button serverSendDescButton;
     [SerializeField] private Button restartButton;
-    [SerializeField] private Button serverHangUpButton, clientHangUpButton;
+    [SerializeField] private Button serverHangUpButton;
+
+    [SerializeField]
+    private Button client0_CallButton, client0_HangUpButton;
+
 
     [SerializeField] public Text localCandidateId;
     [SerializeField] public Text remoteCandidateId;
-    [SerializeField] public TMP_Text midText, candidaiteText, lineIndexText;
-
-    [SerializeField] public TMP_Text c_midText, c_candidaiteText, c_lineIndexText;
     //[SerializeField] private Dropdown dropDownProtocol;
 
     [SerializeField] private Camera cam;
     [SerializeField] public RawImage sourceImage;
-    [SerializeField] private RawImage receiveImage;
     [SerializeField] private Transform rotateObject;
+
+    [SerializeField] private RawImage client0_receiveImage;
 
 
     private void Awake()
@@ -33,28 +35,32 @@ public class TestUI : MonoBehaviour
 
         startButton.onClick.AddListener(OnStart);
         
-        clientCallButton.onClick.AddListener(CallClient);
         serverCallButton.onClick.AddListener(CallServer);
         serverSendDescButton.onClick.AddListener(SendWRTCSetRemoteDescription);
-
+        
         restartButton.onClick.AddListener(RestartIce);
-        clientHangUpButton.onClick.AddListener(HangUpClient);
         serverHangUpButton.onClick.AddListener(HangUpServer);
 
+        client0_CallButton.onClick.AddListener(CallClient_0);
+        client0_HangUpButton.onClick.AddListener(HangUpClient_0);
     }
 
     void Start()
     {
-        clientCallButton.interactable = false;
+        client0_CallButton.interactable = true;
+        client0_HangUpButton.interactable = false;
+
         serverCallButton.interactable = false;
         serverSendDescButton.interactable = false;
 
         restartButton.interactable = false;
-
-        clientHangUpButton.interactable = false;
         serverHangUpButton.interactable = false;
 
-
+        //
+        WRTCClientPeer.Instance.InitReceiveStream((texture) =>
+        {
+            client0_receiveImage.texture = texture;
+        });
     }
 
     // Update is called once per frame
@@ -84,15 +90,24 @@ public class TestUI : MonoBehaviour
     }
 
 
-    private void CallClient()
+    private void CallClient_0()
     {
-        clientCallButton.interactable = false;
-        clientHangUpButton.interactable = true;
-
+        client0_CallButton.interactable = false;
+        client0_HangUpButton.interactable = true;
         serverSendDescButton.interactable = true;
+
+        client0_receiveImage.color = Color.white;
 
         WRTCClientPeer.Instance.OnCall();
     }
+    public void HangUpClient_0()
+    {
+        client0_HangUpButton.interactable = false;
+        client0_receiveImage.color = Color.black;
+
+        WRTCClientPeer.Instance.OnHangUp();
+    }
+
 
     private void SendWRTCSetRemoteDescription()
     {
@@ -106,8 +121,7 @@ public class TestUI : MonoBehaviour
         serverCallButton.interactable = false;
         serverHangUpButton.interactable = true;
         restartButton.interactable = true;
-
-        clientCallButton.interactable = true;
+        
 
         WRTCServerPeer.Instance.OnCall();
     }
@@ -120,13 +134,7 @@ public class TestUI : MonoBehaviour
     }
 
 
-    public void HangUpClient()
-    {
-        clientHangUpButton.interactable = false;
-        receiveImage.color = Color.black;
 
-        WRTCClientPeer.Instance.OnHangUp();
-    }
 
     public void HangUpServer()
     {
@@ -136,15 +144,6 @@ public class TestUI : MonoBehaviour
         sourceImage.color = Color.black;
 
         WRTCServerPeer.Instance.OnHangUp();
-    }
-
-
-    //
-
-    public void SetReceiveImage(Texture tex)
-    {
-        receiveImage.texture = tex;
-        receiveImage.color = Color.white;
     }
 
 }

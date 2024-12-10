@@ -205,25 +205,12 @@ namespace JWebRTC
             CandidateWRTC = new string(candidate.Candidate);
             SdpMLineIndexWRTC = (int)candidate.SdpMLineIndex;
 
-            TestUI.Instance.midText.text = SdpMidWRTC;
-            TestUI.Instance.candidaiteText.text = CandidateWRTC;
-            TestUI.Instance.lineIndexText.text = $"{SdpMLineIndexWRTC}";
-
-
             /////////////////////////////////////////////////////////////////////////////////////////////////////
             // 클라이언트에게 서버 접속 정보 준다. 
 
             // 모든 connection이 성공하고.  AddIceCandidate 해줘야 한다.
             // 다른 클라이언트 connection 정보 알아와야 한다.  이것을 webRTC에서는 signaling 라고 한다함.
             //
-
-            //  >>>>>>>>>>>>>>>>>
-
-            // 패킷 통신 하지만. 결국은 
-            //  WRTCClientPeer.Instance.RecvWRTCAddIceCandidate(candidate.Candidate, candidate.SdpMid, (int)candidate.SdpMLineIndex);
-
-
-            //WRTCClientPeer.Instance.RecvWRTCAddIceCandidate(candidate.Candidate, candidate.SdpMid, (int)candidate.SdpMLineIndex);
         }
 
         #endregion
