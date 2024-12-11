@@ -16,8 +16,7 @@ namespace JWebRTC
         DelegateOnIceCandidate serverOnIceCandidate;
         DelegateOnIceConnectionChange serverOnIceConnectionChange;
         DelegateOnNegotiationNeeded serverOnNegotiationNeeded;
-
-        MediaStream sendStream;
+        
         bool videoUpdateStarted;
 
         //
@@ -30,10 +29,7 @@ namespace JWebRTC
         private void Awake()
         {
             videoUpdateStarted = false;
-        }
 
-        private void Start()
-        {
             serverPeerSenders = new List<RTCRtpSender>();
 
             serverOnIceCandidate = candidate => { OnIceCandidate(serverPeerConnection, candidate); };
@@ -41,7 +37,6 @@ namespace JWebRTC
 
             // 기존 소켓의 accept 기능을 한다.
             serverOnNegotiationNeeded = () => { StartCoroutine(PeerNegotiationNeeded(serverPeerConnection)); };
-
         }
 
 
@@ -283,16 +278,7 @@ namespace JWebRTC
 
 
         #region 외부 UI 인터페이스
-        public void OnStart(Camera cam)
-        {
-            if (sendStream == null)
-            {
-                sendStream = cam.CaptureStream(WebRTCSettings.StreamSize.x, WebRTCSettings.StreamSize.y);
-            }
-        }
-
-        // 여기가 모든 시작.
-        public void OnCall()
+        public void OnCreate(Camera cam, MediaStream sendStream)
         {
             var configuration = WRTCUtil.GetSelectedSdpSemantics();
 
@@ -301,10 +287,10 @@ namespace JWebRTC
             serverPeerConnection.OnIceConnectionChange = serverOnIceConnectionChange;
             serverPeerConnection.OnNegotiationNeeded = serverOnNegotiationNeeded;
 
-            AddTracks();
+            AddTracks(sendStream);
         }
 
-        public void OnHangUp()
+        public void OnClose()
         {
             RemoveTracks();
 
@@ -318,7 +304,7 @@ namespace JWebRTC
             serverPeerConnection.RestartIce();
         }
 
-        public void AddTracks()
+        public void AddTracks(MediaStream sendStream)
         {
             foreach (var track in sendStream.GetTracks())
             {

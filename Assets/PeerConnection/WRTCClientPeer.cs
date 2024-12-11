@@ -49,16 +49,9 @@ namespace JWebRTC
 
         private void Awake()
         {
-            //Instance = this;
-            
-        }
-
-        private void Start()
-        {
             clientOnIceCandidate = candidate => { OnIceCandidate(clientPeerConnection, candidate); };
             clientOnIceConnectionChange = state => { OnIceConnectionChange(clientPeerConnection, state); };
         }
-
 
 
         #region 네트워크 프로토콜
@@ -293,7 +286,7 @@ namespace JWebRTC
         {
         }
 
-        public void OnCall()
+        public void OnRequest()
         {
             var configuration = WRTCUtil.GetSelectedSdpSemantics();
 
@@ -310,7 +303,7 @@ namespace JWebRTC
             }
         }
 
-        public void OnHangUp()
+        public void OnClose()
         {
             RemoveTracks();
 
