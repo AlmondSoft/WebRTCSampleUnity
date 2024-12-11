@@ -156,12 +156,12 @@ namespace JWebRTC
         void SendWRTCSetRemoteDescription(string sdpPacket)
         {
 
-            WRTCServerPeer.Instance.RecvWRTCSetRemoteDescription(sdpPacket);
+            WRTCCore.Instance.RecvWRTCSetRemoteDescription_CS(sdpPacket);
         }
 
         void SendWRTCAddIceCandidate(string Candidate, string SdpMid, int SdpMLineIndex)
         {
-            WRTCServerPeer.Instance.RecvWRTCAddIceCandidate(Candidate, SdpMid, SdpMLineIndex);
+            WRTCCore.Instance.RecvWRTCAddIceCandidate_CS(Candidate, SdpMid, SdpMLineIndex);
         }
 
         // √÷¡æ AddIceCandidate

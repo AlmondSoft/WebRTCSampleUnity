@@ -11,8 +11,6 @@ namespace JWebRTC
 
     public class WRTCServerPeer : MonoBehaviour
     {
-        public static WRTCServerPeer Instance = null;
-
         public RTCPeerConnection serverPeerConnection;
         public List<RTCRtpSender> serverPeerSenders;
         public DelegateOnIceCandidate serverOnIceCandidate;
@@ -31,7 +29,6 @@ namespace JWebRTC
 
         private void Awake()
         {
-            Instance = this;
             videoUpdateStarted = false;
         }
 
@@ -57,7 +54,7 @@ namespace JWebRTC
             //  11111111111111111111111111111111111111111111111111  에서 만들어진 sdpPacketWRTC
 
             if (sdpPacketWRTC != "")
-                WRTCCore.Instance.RecvWRTCSetRemoteDescription(sdpPacketWRTC);
+                WRTCCore.Instance.RecvWRTCSetRemoteDescription_SC(sdpPacketWRTC);
         }
 
         public void RecvWRTCSetRemoteDescription(string sdpPacket)
@@ -107,13 +104,13 @@ namespace JWebRTC
         void SendWRTCAddIceCandidate()
         {
             // 서버의 Candidate정보를 전달
-            WRTCCore.Instance.RecvWRTCAddIceCandidate(CandidateWRTC, SdpMidWRTC, SdpMLineIndexWRTC);
+            WRTCCore.Instance.RecvWRTCAddIceCandidate_SC(CandidateWRTC, SdpMidWRTC, SdpMLineIndexWRTC);
         }
 
         // 접속이 끊어지거나 상태가 변경됨
         void SendChangedStaus(RTCIceConnectionState state)
         {
-            WRTCCore.Instance.ChangeStatusServer(state);
+            WRTCCore.Instance.ChangeStatusServer_SC(state);
         }
         
 

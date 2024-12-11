@@ -95,10 +95,10 @@ public class TestUI : MonoBehaviour
     {
         startButton.interactable = false;
         serverCallButton.interactable = true;
-       
+
 
         //
-        WRTCServerPeer.Instance.OnStart(cam);
+        WRTCCore.Instance.StartServer(cam);
 
         // 반드시 여기서 
         sourceImage.texture = cam.targetTexture;
@@ -114,14 +114,14 @@ public class TestUI : MonoBehaviour
 
         client0_receiveImage.color = Color.white;
 
-        WRTCCore.Instance.OnCall(0);
+        WRTCCore.Instance.CallClient(0);
     }
     public void HangUpClient_0()
     {
         client0_HangUpButton.interactable = false;
         client0_receiveImage.color = Color.black;
 
-        WRTCCore.Instance.OnHangUp(0);
+        WRTCCore.Instance.HangUpClient(0);
     }
 
     private void CallClient_1()
@@ -132,14 +132,14 @@ public class TestUI : MonoBehaviour
 
         client1_receiveImage.color = Color.white;
 
-        WRTCCore.Instance.OnCall(1);
+        WRTCCore.Instance.CallClient(1);
     }
     public void HangUpClient_1()
     {
         client1_HangUpButton.interactable = false;
         client1_receiveImage.color = Color.black;
 
-        WRTCCore.Instance.OnHangUp(1);
+        WRTCCore.Instance.HangUpClient(1);
     }
 
 
@@ -148,7 +148,7 @@ public class TestUI : MonoBehaviour
     {
         serverSendDescButton.interactable = false;
 
-        WRTCServerPeer.Instance.SendWRTCSetRemoteDescription();
+        WRTCCore.Instance.SendDescServer();
     }
 
     private void CallServer()
@@ -156,29 +156,24 @@ public class TestUI : MonoBehaviour
         serverCallButton.interactable = false;
         serverHangUpButton.interactable = true;
         restartButton.interactable = true;
-        
 
-        WRTCServerPeer.Instance.OnCall();
+        WRTCCore.Instance.CallServer();
     }
 
     private void RestartIce()
     {
         restartButton.interactable = false;
 
-        WRTCServerPeer.Instance.OnRestartIce();
+        WRTCCore.Instance.RestartIceServer();
     }
-
-
-
 
     public void HangUpServer()
     {
         serverCallButton.interactable = true;
         restartButton.interactable = false;
-
         sourceImage.color = Color.black;
 
-        WRTCServerPeer.Instance.OnHangUp();
+        WRTCCore.Instance.HangUpServer();
     }
 
 }
