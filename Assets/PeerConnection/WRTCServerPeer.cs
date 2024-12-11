@@ -11,14 +11,14 @@ namespace JWebRTC
 
     public class WRTCServerPeer : MonoBehaviour
     {
-        public RTCPeerConnection serverPeerConnection;
-        public List<RTCRtpSender> serverPeerSenders;
-        public DelegateOnIceCandidate serverOnIceCandidate;
-        public DelegateOnIceConnectionChange serverOnIceConnectionChange;
-        public DelegateOnNegotiationNeeded serverOnNegotiationNeeded;
+        RTCPeerConnection serverPeerConnection;
+        List<RTCRtpSender> serverPeerSenders;
+        DelegateOnIceCandidate serverOnIceCandidate;
+        DelegateOnIceConnectionChange serverOnIceConnectionChange;
+        DelegateOnNegotiationNeeded serverOnNegotiationNeeded;
 
-        public MediaStream sendStream;
-        private bool videoUpdateStarted;
+        MediaStream sendStream;
+        bool videoUpdateStarted;
 
         //
         string sdpPacketWRTC;
@@ -118,7 +118,7 @@ namespace JWebRTC
 
 
         #region PeerNegotiationNeeded
-        public IEnumerator PeerNegotiationNeeded(RTCPeerConnection pc)
+        IEnumerator PeerNegotiationNeeded(RTCPeerConnection pc)
         {
             var op = pc.CreateOffer();
             yield return op;
@@ -139,7 +139,7 @@ namespace JWebRTC
             }
         }
 
-        public IEnumerator OnCreateOfferSuccess(RTCPeerConnection pc, RTCSessionDescription desc)
+        IEnumerator OnCreateOfferSuccess(RTCPeerConnection pc, RTCSessionDescription desc)
         {
             //Debug.Log($"Offer from Server >> \n{desc.sdp}");
             //Debug.Log($"Server >> setLocalDescription start");
@@ -181,7 +181,7 @@ namespace JWebRTC
       
         #region OnIceCandidate
 
-        private void OnIceCandidate(RTCPeerConnection pc, RTCIceCandidate candidate)
+        void OnIceCandidate(RTCPeerConnection pc, RTCIceCandidate candidate)
         {
             /*
             switch ((ProtocolOption)dropDownProtocol.value)
@@ -215,7 +215,7 @@ namespace JWebRTC
 
         #region OnIceConnectionChange
 
-        private void OnIceConnectionChange(RTCPeerConnection pc, RTCIceConnectionState state)
+        void OnIceConnectionChange(RTCPeerConnection pc, RTCIceConnectionState state)
         {
             if (state == RTCIceConnectionState.Connected || state == RTCIceConnectionState.Completed)
             {

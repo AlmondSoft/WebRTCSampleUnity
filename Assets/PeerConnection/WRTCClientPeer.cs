@@ -9,17 +9,15 @@ namespace JWebRTC
 {
     class WRTCClientPeer : MonoBehaviour
     {
-        //public static WRTCClientPeer Instance = null;
-
         //
-        public RTCPeerConnection clientPeerConnection;
-        private MediaStream receiveStream;
+        RTCPeerConnection clientPeerConnection;
+        MediaStream receiveStream;
 
-        private DelegateOnIceConnectionChange clientOnIceConnectionChange;
-        private DelegateOnIceCandidate clientOnIceCandidate;
-        private DelegateOnTrack clientOntrack;
+        DelegateOnIceConnectionChange clientOnIceConnectionChange;
+        DelegateOnIceCandidate clientOnIceCandidate;
+        DelegateOnTrack clientOntrack;
 
-        private bool videoUpdateStarted;
+        bool videoUpdateStarted;
 
         System.Action<Texture> receiveTextureFunc;
 
@@ -120,7 +118,7 @@ namespace JWebRTC
         }
 
 
-        public IEnumerator OnCreateAnswerSuccess(RTCPeerConnection clientPeer, RTCSessionDescription desc)
+        IEnumerator OnCreateAnswerSuccess(RTCPeerConnection clientPeer, RTCSessionDescription desc)
         {
             // 클라이언트 응답 처리 계속
             // 파라미터 - RTCPeerConnection이 클라이언트 이다.
