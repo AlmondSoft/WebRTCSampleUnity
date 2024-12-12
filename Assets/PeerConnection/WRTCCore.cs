@@ -231,6 +231,106 @@ namespace JWebRTC
             RecvWRTCAddIceCandidate_SC(wantClientIndex, Candidate, SdpMid, SdpMLineIndex);
         }
 
+        public void SignalingRTCSendClosedFromServer(string myServerKey, int myServerIndex)
+        {
+            // 아래 로직은 서버 node js로 이동해야 한다.  여기서는 패킷 send만 있어야 한다.
+            string otherClientKey;
+            int otherClientIndex;
+            
+            if (listServerPeers.ContainsKey(myServerKey))
+            {
+                List<RTCPeerInfo> peerServerList = listServerPeers[myServerKey];
+                RTCPeerInfo peerServer = peerServerList.Find(peer => peer.index == myServerIndex);
+
+                if (peerServer != null)
+                {
+                    otherClientKey = new string(peerServer.otherPeerKey);
+                    otherClientIndex = peerServer.otherPeerIndex;
+                    peerServerList.Remove(peerServer);
+
+                    // 네트웍 호출.. 우선은 직접 호출
+                    SignalingRTCRecvActionCloseServerPeer(myServerKey, myServerIndex);
+
+                    // 아래 로직은 서버 node js로 이동해야 한다.  여기서는 패킷 send만 있어야 한다.
+                    if (listClientPeers.ContainsKey(otherClientKey))
+                    {
+                        List<RTCPeerInfo> peerClientList = listClientPeers[otherClientKey];
+                        RTCPeerInfo peerClient = peerClientList.Find(peer => peer.index == otherClientIndex);
+
+                        peerClientList.Remove(peerClient);
+
+                        // 네트웍 호출.. 우선은 직접 호출
+                        SignalingRTCRecvActionCloseClientPeer(otherClientKey, otherClientIndex);
+                    }
+                }
+                else
+                {
+                }
+            }
+        }
+
+        public void SignalingRTCSendClosedFromClient(string myClientKey, int myClientIndex)
+        {
+            // 아래 로직은 서버 node js로 이동해야 한다.  여기서는 패킷 send만 있어야 한다.
+            string otherServerKey;
+            int otherServerIndex;
+
+            if (listClientPeers.ContainsKey(myClientKey))
+            {
+                List<RTCPeerInfo> peerClientList = listClientPeers[myClientKey];
+                RTCPeerInfo peerClient = peerClientList.Find(peer => peer.index == myClientIndex);
+
+                if (peerClient != null)
+                {
+                    otherServerKey = new string(peerClient.otherPeerKey);
+                    otherServerIndex = peerClient.otherPeerIndex;
+
+                    peerClientList.Remove(peerClient);
+
+                    // 네트웍 호출.. 우선은 직접 호출
+                    SignalingRTCRecvActionCloseClientPeer(myClientKey, myClientIndex);
+
+                    // 아래 로직은 서버 node js로 이동해야 한다.  여기서는 패킷 send만 있어야 한다.
+                    if (listServerPeers.ContainsKey(otherServerKey))
+                    {
+                        List<RTCPeerInfo> peerServerList = listServerPeers[otherServerKey];
+                        RTCPeerInfo peerServer = peerServerList.Find(peer => peer.index == otherServerIndex);
+
+                        peerServerList.Remove(peerServer);
+
+                        // 네트웍 호출.. 우선은 직접 호출
+                        SignalingRTCRecvActionCloseServerPeer(otherServerKey, otherServerIndex);
+                    }
+                }
+                else
+                {
+                }
+            }
+        }
+
+        // 상대방이나 여러 이유로 접속이 끊어졌다.  서버 peer가 있다면 삭제해라.
+        public void SignalingRTCRecvActionCloseServerPeer(string wantServerKey, int wantServerIndex)
+        {
+            if (serverPeers.ContainsKey(wantServerIndex))
+            {
+                GameObject serverPeer = serverPeers[wantServerIndex];
+                Destroy(serverPeer);
+                serverPeers.Remove(wantServerIndex);
+            }
+
+        }
+
+        // 상대방이나 여러 이유로 접속이 끊어졌다.  클라이언트 peer가 있다면 삭제해라.
+        public void SignalingRTCRecvActionCloseClientPeer(string wantClientKey, int wantClientIndex)
+        {
+            if (clientPeers.ContainsKey(wantClientIndex))
+            {
+                GameObject clientPeer = clientPeers[wantClientIndex];
+                Destroy(clientPeer);
+                clientPeers.Remove(wantClientIndex);
+            }
+
+        }
 
         #endregion
 
@@ -379,10 +479,7 @@ namespace JWebRTC
                 clientPeers[clientIndex].GetComponent<WRTCClientPeer>().RecvWRTCAddIceCandidate(CandidateWRTC, SdpMidWRTC, SdpMLineIndexWRTC);
         }
 
-        public void ChangeStatusServer_SC(int key, RTCIceConnectionState state)
-        {
-            Debug.Log($"ChangeStatusServer >> {state}");
-        }
+ 
 
         #endregion
 

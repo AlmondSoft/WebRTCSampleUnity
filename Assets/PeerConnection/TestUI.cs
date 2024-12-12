@@ -51,17 +51,6 @@ public class TestUI : MonoBehaviour
 
     void Start()
     {
-        client0_CallButton.interactable = true;
-        client0_HangUpButton.interactable = false;
-
-        client1_CallButton.interactable = true;
-        client1_HangUpButton.interactable = false;
-        
-        serverSendDescButton.interactable = false;
-
-        restartButton.interactable = false;
-        serverHangUpButton.interactable = false;
-        
 
     }
 
@@ -84,9 +73,6 @@ public class TestUI : MonoBehaviour
     int serverIndex;
     private void OnStart()
     {
-        startButton.interactable = false;
-
-        //
         serverIndex = WRTCCore.Instance.CreateServer(cam, (camera) =>
         {
             sourceImage.texture = camera.targetTexture;
@@ -96,23 +82,17 @@ public class TestUI : MonoBehaviour
 
     private void SendWRTCSetRemoteDescription()
     {
-        serverSendDescButton.interactable = false;
-
         WRTCCore.Instance.ReplyByServer(serverIndex);
     }
 
     private void RestartIce()
     {
-        restartButton.interactable = false;
-
         WRTCCore.Instance.RestartIceServer(serverIndex);
     }
 
     public void HangUpServer()
     {
-        restartButton.interactable = false;
         sourceImage.color = Color.black;
-
         WRTCCore.Instance.CloseServer(serverIndex);
     }
 
@@ -121,11 +101,7 @@ public class TestUI : MonoBehaviour
     ///
     private void CallClient_1()
     {
-        client1_CallButton.interactable = false;
-        client1_HangUpButton.interactable = true;
-        serverSendDescButton.interactable = true;
         client1_receiveImage.color = Color.white;
-
        
         WRTCCore.Instance.SignalingRTCGetWantServerPeerKey(WRTCCore.myUserKey, clientIndex, (serverKey, serverIndex) =>
         {
@@ -146,7 +122,6 @@ public class TestUI : MonoBehaviour
 
     public void HangUpClient_1()
     {
-        client1_HangUpButton.interactable = false;
         client1_receiveImage.color = Color.black;
 
         WRTCCore.Instance.CloseClient(clientIndex);

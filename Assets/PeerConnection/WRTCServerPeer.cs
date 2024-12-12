@@ -111,7 +111,12 @@ namespace JWebRTC
         // 접속이 끊어지거나 상태가 변경됨
         void SendChangedStaus(RTCIceConnectionState state)
         {
-            WRTCCore.Instance.ChangeStatusServer_SC(1, state);
+            if (state == RTCIceConnectionState.Disconnected
+               || state == RTCIceConnectionState.Failed
+               || state == RTCIceConnectionState.Closed)
+            {
+                WRTCCore.Instance.SignalingRTCSendClosedFromServer(myKey, myIndex);
+            }
         }
         
 
