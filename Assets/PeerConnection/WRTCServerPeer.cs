@@ -25,6 +25,17 @@ namespace JWebRTC
         string SdpMidWRTC, CandidateWRTC;
         int SdpMLineIndexWRTC;
 
+        [SerializeField]
+        string myKey;
+
+        [SerializeField]
+        int myIndex;
+
+        public void SetIndexKey(string key, int index)
+        {
+            myKey = key;
+            myIndex = index;
+        }
 
         private void Awake()
         {
@@ -47,9 +58,10 @@ namespace JWebRTC
         public void SendWRTCSetRemoteDescription()
         {
             //  11111111111111111111111111111111111111111111111111  에서 만들어진 sdpPacketWRTC
-
             if (sdpPacketWRTC != "")
-                WRTCCore.Instance.RecvWRTCSetRemoteDescription_SC(sdpPacketWRTC);
+            {
+                WRTCCore.Instance.SignalingRTCSendSetRemoteDescriptionFromServer(myKey, myIndex, sdpPacketWRTC);
+            }
         }
 
         public void RecvWRTCSetRemoteDescription(string sdpPacket)
@@ -57,7 +69,7 @@ namespace JWebRTC
             //  44444444444444444444444444444444444444  >>>>>>>>>>>>>>>>>
 
             RTCSessionDescription desc = new RTCSessionDescription();
-            desc.sdp = sdpPacket;
+            desc.sdp = sdpPacket; 
             desc.type = RTCSdpType.Answer;
 
             StartCoroutine(WRTCSetRemoteDescription(desc));
@@ -93,19 +105,13 @@ namespace JWebRTC
 
             //
             // 서버의 Candidate정보를 전달
-            SendWRTCAddIceCandidate();
-        }
-
-        void SendWRTCAddIceCandidate()
-        {
-            // 서버의 Candidate정보를 전달
-            WRTCCore.Instance.RecvWRTCAddIceCandidate_SC(CandidateWRTC, SdpMidWRTC, SdpMLineIndexWRTC);
+            WRTCCore.Instance.SignalingRTCSendCandidateFromServer(myKey, myIndex, CandidateWRTC, SdpMidWRTC, SdpMLineIndexWRTC);
         }
 
         // 접속이 끊어지거나 상태가 변경됨
         void SendChangedStaus(RTCIceConnectionState state)
         {
-            WRTCCore.Instance.ChangeStatusServer_SC(state);
+            WRTCCore.Instance.ChangeStatusServer_SC(1, state);
         }
         
 

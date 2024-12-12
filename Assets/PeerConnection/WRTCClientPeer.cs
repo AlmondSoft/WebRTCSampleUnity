@@ -21,6 +21,19 @@ namespace JWebRTC
 
         System.Action<Texture> receiveTextureFunc;
 
+        [SerializeField]
+        string myKey;
+
+        [SerializeField]
+        int myIndex;
+
+        public void SetIndexKey(string key, int index)
+        {
+            myKey = key;
+            myIndex = index;
+        }
+
+
         public void InitReceiveStream(System.Action<Texture>  func)
         {
             receiveTextureFunc = func;
@@ -134,25 +147,7 @@ namespace JWebRTC
 
             //  서버에게 전송
             //  3333333333333333333333333333333  >>>>>>>>>>>>>>>>>
-
-            ////////////////////////////////////////////////////////////////////////
-            // 서버 응답 처리.
-
-            // 패킷 통신 하지만. 결국은 
-            //  WRTCServerPeer.Instance.RecvWRTCSetRemoteDescription(sdpPacket); 호출 됨.
-            SendWRTCSetRemoteDescription(new string(desc.sdp));
-        }
-        //
-
-        void SendWRTCSetRemoteDescription(string sdpPacket)
-        {
-
-            WRTCCore.Instance.RecvWRTCSetRemoteDescription_CS(sdpPacket);
-        }
-
-        void SendWRTCAddIceCandidate(string Candidate, string SdpMid, int SdpMLineIndex)
-        {
-            WRTCCore.Instance.RecvWRTCAddIceCandidate_CS(Candidate, SdpMid, SdpMLineIndex);
+            WRTCCore.Instance.SignalingRTCSendSetRemoteDescriptionFromClient(myKey, myIndex, desc.sdp);
         }
 
         // 최종 AddIceCandidate
@@ -206,9 +201,7 @@ namespace JWebRTC
             // 우선은 직접 호출  클라이언트 입장 
             // 기본적으로 WebRTC에서 signaling는 지원안한다.
 
-            // 패킷 통신 하지만. 결국은 
-           
-            SendWRTCAddIceCandidate(candidate.Candidate, candidate.SdpMid, (int)candidate.SdpMLineIndex);
+            WRTCCore.Instance.SignalingRTCSendCandidateFromClient(myKey, myIndex, candidate.Candidate, candidate.SdpMid, (int)candidate.SdpMLineIndex);
         }
 
         #endregion

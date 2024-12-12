@@ -61,12 +61,7 @@ public class TestUI : MonoBehaviour
 
         restartButton.interactable = false;
         serverHangUpButton.interactable = false;
-
-        //
-        WRTCCore.Instance.CreateClient((texture) =>
-        {
-            client1_receiveImage.texture = texture;
-        });
+        
 
     }
 
@@ -79,69 +74,38 @@ public class TestUI : MonoBehaviour
             rotateObject.Rotate(100 * t, 200 * t, 300 * t);
         }
     }
+    private void CallClient_0()
+    {
+    }
+    public void HangUpClient_0()
+    {
+    }
 
-
+    int serverIndex;
     private void OnStart()
     {
         startButton.interactable = false;
 
         //
-        WRTCCore.Instance.CreateServer(cam, (camera) =>
+        serverIndex = WRTCCore.Instance.CreateServer(cam, (camera) =>
         {
             sourceImage.texture = camera.targetTexture;
             sourceImage.color = Color.white;
         });
     }
 
-
-    private void CallClient_0()
-    {
-        client0_CallButton.interactable = false;
-        client0_HangUpButton.interactable = true;
-        serverSendDescButton.interactable = true;
-
-        client0_receiveImage.color = Color.white;
-
-        WRTCCore.Instance.RequestByClient(0);
-    }
-    public void HangUpClient_0()
-    {
-        client0_HangUpButton.interactable = false;
-        client0_receiveImage.color = Color.black;
-
-        WRTCCore.Instance.CloseClient(0);
-    }
-
-    private void CallClient_1()
-    {
-        client1_CallButton.interactable = false;
-        client1_HangUpButton.interactable = true;
-        serverSendDescButton.interactable = true;
-
-        client1_receiveImage.color = Color.white;
-
-        WRTCCore.Instance.RequestByClient(1);
-    }
-    public void HangUpClient_1()
-    {
-        client1_HangUpButton.interactable = false;
-        client1_receiveImage.color = Color.black;
-
-        WRTCCore.Instance.CloseClient(1);
-    }
-
     private void SendWRTCSetRemoteDescription()
     {
         serverSendDescButton.interactable = false;
 
-        WRTCCore.Instance.ReplyByServer(1);
+        WRTCCore.Instance.ReplyByServer(serverIndex);
     }
 
     private void RestartIce()
     {
         restartButton.interactable = false;
 
-        WRTCCore.Instance.RestartIceServer(1);
+        WRTCCore.Instance.RestartIceServer(serverIndex);
     }
 
     public void HangUpServer()
@@ -149,7 +113,43 @@ public class TestUI : MonoBehaviour
         restartButton.interactable = false;
         sourceImage.color = Color.black;
 
-        WRTCCore.Instance.CloseServer(1);
+        WRTCCore.Instance.CloseServer(serverIndex);
+    }
+
+
+    int clientIndex;
+    ///
+    private void CallClient_1()
+    {
+        client1_CallButton.interactable = false;
+        client1_HangUpButton.interactable = true;
+        serverSendDescButton.interactable = true;
+        client1_receiveImage.color = Color.white;
+
+       
+        WRTCCore.Instance.SignalingRTCGetWantServerPeerKey(WRTCCore.myUserKey, clientIndex, (serverKey, serverIndex) =>
+        {
+            //
+            clientIndex = WRTCCore.Instance.CreateClient((texture) =>
+            {
+                /////////////////////////////////////////
+                //  확인! 확인 !
+                //
+                // 업데이트 함수임 리턴 함수 아님.
+                client1_receiveImage.texture = texture;
+                //
+            });
+
+            WRTCCore.Instance.RequestByClient(clientIndex, serverKey, serverIndex);
+        });
+    }
+
+    public void HangUpClient_1()
+    {
+        client1_HangUpButton.interactable = false;
+        client1_receiveImage.color = Color.black;
+
+        WRTCCore.Instance.CloseClient(clientIndex);
     }
 
 }
